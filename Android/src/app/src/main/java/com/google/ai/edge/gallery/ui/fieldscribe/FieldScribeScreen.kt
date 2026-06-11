@@ -61,6 +61,12 @@ fun FieldScribeScreen(
     }
   }
 
+  LaunchedEffect(uiState.transcript) {
+    if (uiState.transcript.isNotEmpty()) {
+      viewModel.generateStructuredReport(selectedModel, uiState.transcript)
+    }
+  }
+
   val recognizer = remember {
     if (SpeechRecognizer.isRecognitionAvailable(context)) {
       SpeechRecognizer.createSpeechRecognizer(context)
@@ -167,34 +173,8 @@ fun FieldScribeScreen(
         style = MaterialTheme.typography.bodyLarge,
       )
 
-      if (uiState.transcript.isNotEmpty()) {
-        Button(
-          modifier = Modifier.padding(top = 16.dp),
-          enabled = !uiState.inProgress,
-          onClick = { viewModel.generateStructuredReport(selectedModel, uiState.transcript) },
-        ) {
-          Text("Generate Report")
-        }
-      }
-
       if (uiState.inProgress) {
         CircularProgressIndicator(modifier = Modifier.padding(top = 16.dp))
-      }
-
-      if (uiState.structuredReport.isNotEmpty()) {
-        Text(
-          modifier = Modifier.padding(top = 24.dp).fillMaxWidth(),
-          text = uiState.structuredReport,
-          style = MaterialTheme.typography.bodyMedium,
-        )
-
-        Button(
-          modifier = Modifier.padding(top = 16.dp),
-          enabled = !uiState.inProgress,
-          onClick = { viewModel.validateReport(selectedModel, uiState.structuredReport) },
-        ) {
-          Text("Validate Report")
-        }
       }
 
       if (uiState.validatedReport.isNotEmpty()) {

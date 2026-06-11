@@ -111,6 +111,7 @@ class FieldScribeViewModel @Inject constructor() : ViewModel() {
           _uiState.update { it.copy(structuredReport = response) }
           if (done) {
             _uiState.update { it.copy(inProgress = false) }
+            validateReport(model, response)
           }
         },
         cleanUpListener = { _uiState.update { it.copy(inProgress = false) } },
