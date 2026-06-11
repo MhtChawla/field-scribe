@@ -11,6 +11,8 @@ data class FieldScribeUiState(
   /** Raw transcript produced by on-device speech recognition. */
   val transcript: String = "",
 
+  val isListening: Boolean = false,
+
   /** Structured incident report JSON returned by inference call #1. */
   val structuredReport: String = "",
 
@@ -19,6 +21,8 @@ data class FieldScribeUiState(
 
   /** Whether any inference pass is currently running. */
   val inProgress: Boolean = false,
+
+  val errorMessage: String? = null,
 )
 
 @HiltViewModel
@@ -28,5 +32,13 @@ class FieldScribeViewModel @Inject constructor() : ViewModel() {
 
   fun updateTranscript(transcript: String) {
     _uiState.update { it.copy(transcript = transcript) }
+  }
+
+  fun setListening(isListening: Boolean) {
+    _uiState.update { it.copy(isListening = isListening) }
+  }
+
+  fun setError(message: String?) {
+    _uiState.update { it.copy(errorMessage = message) }
   }
 }
