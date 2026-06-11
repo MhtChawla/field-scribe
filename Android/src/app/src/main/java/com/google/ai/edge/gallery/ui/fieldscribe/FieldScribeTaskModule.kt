@@ -31,6 +31,7 @@ class FieldScribeTask @Inject constructor() : CustomTask {
       models = mutableListOf(),
       description = "Dictate a field incident and get a structured, validated report on-device",
       shortDescription = "Voice incident reports",
+      modelNames = listOf("Gemma3-1B-IT"),
       docUrl = "https://github.com/google-ai-edge/LiteRT-LM/blob/main/kotlin/README.md",
       sourceCodeUrl =
         "https://github.com/google-ai-edge/gallery/blob/main/Android/src/app/src/main/java/com/google/ai/edge/gallery/ui/llmchat/LlmChatModelHelper.kt",
