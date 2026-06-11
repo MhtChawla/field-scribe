@@ -102,12 +102,14 @@ class FieldScribeViewModel @Inject constructor() : ViewModel() {
 
       val prompt =
         """
-        You are a safety reviewer checking an incident report JSON for completeness and accuracy.
-        Given the JSON below, return the SAME JSON but add a "flags" field, which is a list of
-        strings naming any field that is "unknown", missing, vague, or needs human review
-        (for example, injuries reported but no action_taken). If nothing needs review, return
-        an empty list for "flags".
-        Return ONLY valid JSON.
+        Below is a JSON incident report. Go through these fields one at a time:
+        incident_type, location, time, impact, action_taken, injuries.
+
+        For each field, write "FIELDNAME: OK" if it has a real value, or
+        "FIELDNAME: MISSING" if its value is "unknown", empty, or missing.
+
+        After checking all fields, on a final line write:
+        FLAGS: [list the MISSING fields as a JSON array]
 
         Report:
         $structuredReport
