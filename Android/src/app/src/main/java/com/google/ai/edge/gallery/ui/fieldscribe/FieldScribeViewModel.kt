@@ -89,4 +89,48 @@ class FieldScribeViewModel @Inject constructor() : ViewModel() {
       )
     }
   }
+
+  fun validateReport(model: Model, structuredReport: String) {
+    _uiState.update { it.copy(validatedReport = "", inProgress = true, errorMessage = null) }
+
+    viewModelScope.launch(Dispatchers.Default) {
+      while (model.instance == null) {
+        delay(100)
+      }
+
+      model.runtimeHelper.resetConversation(model = model, supportImage = false, supportAudio = false)
+
+      val prompt =
+        """
+        You are a safety reviewer checking an incident report JSON for completeness and accuracy.
+        Given the JSON below, return the SAME JSON but add a "flags" field, which is a list of
+        strings naming any field that is "unknown", missing, vague, or needs human review
+        (for example, injuries reported but no action_taken). If nothing needs review, return
+        an empty list for "flags".
+        Return ONLY valid JSON.
+
+        Report:
+        $structuredReport
+        """
+          .trimIndent()
+
+      var response = ""
+      model.runtimeHelper.runInference(
+        model = model,
+        input = prompt,
+        resultListener = { partialResult, done, _ ->
+          response = processLlmResponse(response = "$response$partialResult")
+          _uiState.update { it.copy(validatedReport = response) }
+          if (done) {
+            _uiState.update { it.copy(inProgress = false) }
+          }
+        },
+        cleanUpListener = { _uiState.update { it.copy(inProgress = false) } },
+        onError = { message ->
+          _uiState.update { it.copy(inProgress = false, errorMessage = message) }
+        },
+        coroutineScope = viewModelScope,
+      )
+    }
+  }
 }

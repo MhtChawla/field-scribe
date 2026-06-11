@@ -186,6 +186,22 @@ fun FieldScribeScreen(
           text = uiState.structuredReport,
           style = MaterialTheme.typography.bodyMedium,
         )
+
+        Button(
+          modifier = Modifier.padding(top = 16.dp),
+          enabled = !uiState.inProgress,
+          onClick = { viewModel.validateReport(selectedModel, uiState.structuredReport) },
+        ) {
+          Text("Validate Report")
+        }
+      }
+
+      if (uiState.validatedReport.isNotEmpty()) {
+        Text(
+          modifier = Modifier.padding(top = 24.dp).fillMaxWidth(),
+          text = uiState.validatedReport,
+          style = MaterialTheme.typography.bodyMedium,
+        )
       }
 
       uiState.errorMessage?.let { error ->
