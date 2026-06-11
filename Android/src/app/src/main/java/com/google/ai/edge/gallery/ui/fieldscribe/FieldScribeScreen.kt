@@ -24,6 +24,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -206,6 +207,17 @@ fun FieldScribeScreen(
           modifier = Modifier.fillMaxWidth(),
           text = uiState.validatedReport,
           style = MaterialTheme.typography.bodyMedium,
+        )
+
+        Text(
+          modifier = Modifier.padding(top = 24.dp),
+          text = "Edit report (edit the flagged values below):",
+          style = MaterialTheme.typography.titleMedium,
+        )
+        OutlinedTextField(
+          modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+          value = uiState.editedReport,
+          onValueChange = { viewModel.updateEditedReport(it) },
         )
       }
 

@@ -13,6 +13,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.json.JSONArray
+import org.json.JSONObject
 
 data class FieldScribeUiState(
   /** Raw transcript produced by on-device speech recognition. */
@@ -25,6 +27,8 @@ data class FieldScribeUiState(
 
   /** Validated/flagged report returned by inference call #2. */
   val validatedReport: String = "",
+
+  val editedReport: String = "",
 
   /** Whether any inference pass is currently running. */
   val inProgress: Boolean = false,
@@ -47,6 +51,34 @@ class FieldScribeViewModel @Inject constructor() : ViewModel() {
 
   fun setError(message: String?) {
     _uiState.update { it.copy(errorMessage = message) }
+  }
+
+  fun updateEditedReport(editedReport: String) {
+    _uiState.update { it.copy(editedReport = editedReport) }
+  }
+
+  private fun buildEditedReport(structuredReport: String, validatedReport: String): String {
+    return try {
+      val jsonStart = structuredReport.indexOf('{')
+      val jsonEnd = structuredReport.lastIndexOf('}')
+      val reportJson = JSONObject(structuredReport.substring(jsonStart, jsonEnd + 1))
+
+      val flagsMatch =
+        Regex("FLAGS:\\s*(\\[.*?\\])", RegexOption.DOT_MATCHES_ALL).find(validatedReport)
+      val flags = flagsMatch?.let { JSONArray(it.groupValues[1]) }
+
+      if (flags != null) {
+        for (i in 0 until flags.length()) {
+          val field = flags.getString(i)
+          if (reportJson.has(field)) {
+            reportJson.put(field, "")
+          }
+        }
+      }
+      reportJson.toString(2)
+    } catch (e: Exception) {
+      structuredReport
+    }
   }
 
   fun generateStructuredReport(model: Model, transcript: String) {
@@ -124,7 +156,12 @@ class FieldScribeViewModel @Inject constructor() : ViewModel() {
           response = processLlmResponse(response = "$response$partialResult")
           _uiState.update { it.copy(validatedReport = response) }
           if (done) {
-            _uiState.update { it.copy(inProgress = false) }
+            _uiState.update {
+              it.copy(
+                inProgress = false,
+                editedReport = buildEditedReport(structuredReport, response),
+              )
+            }
           }
         },
         cleanUpListener = { _uiState.update { it.copy(inProgress = false) } },
