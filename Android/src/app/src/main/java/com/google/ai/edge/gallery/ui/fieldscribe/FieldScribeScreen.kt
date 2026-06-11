@@ -198,7 +198,12 @@ fun FieldScribeScreen(
 
       if (uiState.validatedReport.isNotEmpty()) {
         Text(
-          modifier = Modifier.padding(top = 24.dp).fillMaxWidth(),
+          modifier = Modifier.padding(top = 24.dp),
+          text = "Validation:",
+          style = MaterialTheme.typography.titleMedium,
+        )
+        Text(
+          modifier = Modifier.fillMaxWidth(),
           text = uiState.validatedReport,
           style = MaterialTheme.typography.bodyMedium,
         )
