@@ -12,16 +12,22 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material.icons.rounded.Stop
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -31,6 +37,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.google.ai.edge.gallery.data.BuiltInTaskId
+import com.google.ai.edge.gallery.data.ModelDownloadStatusType
 import com.google.ai.edge.gallery.ui.modelmanager.ModelManagerViewModel
 
 @Composable
@@ -41,6 +49,16 @@ fun FieldScribeScreen(
 ) {
   val context = LocalContext.current
   val uiState by viewModel.uiState.collectAsState()
+  val task = modelManagerViewModel.getTaskById(id = BuiltInTaskId.FIELD_SCRIBE)!!
+  val modelManagerUiState by modelManagerViewModel.uiState.collectAsState()
+  val selectedModel = modelManagerUiState.selectedModel
+
+  val curDownloadStatus = modelManagerUiState.modelDownloadStatus[selectedModel.name]
+  LaunchedEffect(curDownloadStatus, selectedModel.name) {
+    if (curDownloadStatus?.status == ModelDownloadStatusType.SUCCEEDED) {
+      modelManagerViewModel.initializeModel(context, task = task, model = selectedModel)
+    }
+  }
 
   val recognizer = remember {
     if (SpeechRecognizer.isRecognitionAvailable(context)) {
@@ -131,7 +149,7 @@ fun FieldScribeScreen(
 
   Box(modifier = Modifier.fillMaxSize()) {
     Column(
-      modifier = Modifier.fillMaxSize().padding(24.dp),
+      modifier = Modifier.fillMaxSize().padding(24.dp).verticalScroll(rememberScrollState()),
       verticalArrangement = Arrangement.Center,
       horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -147,6 +165,28 @@ fun FieldScribeScreen(
           },
         style = MaterialTheme.typography.bodyLarge,
       )
+
+      if (uiState.transcript.isNotEmpty()) {
+        Button(
+          modifier = Modifier.padding(top = 16.dp),
+          enabled = !uiState.inProgress,
+          onClick = { viewModel.generateStructuredReport(selectedModel, uiState.transcript) },
+        ) {
+          Text("Generate Report")
+        }
+      }
+
+      if (uiState.inProgress) {
+        CircularProgressIndicator(modifier = Modifier.padding(top = 16.dp))
+      }
+
+      if (uiState.structuredReport.isNotEmpty()) {
+        Text(
+          modifier = Modifier.padding(top = 24.dp).fillMaxWidth(),
+          text = uiState.structuredReport,
+          style = MaterialTheme.typography.bodyMedium,
+        )
+      }
 
       uiState.errorMessage?.let { error ->
         Text(
