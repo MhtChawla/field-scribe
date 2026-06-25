@@ -147,11 +147,6 @@ object BuiltInTaskId {
 
 private val allLegacyTaskIds: MutableSet<String> =
   mutableSetOf(
-    BuiltInTaskId.LLM_CHAT,
-    BuiltInTaskId.LLM_PROMPT_LAB,
-    BuiltInTaskId.LLM_ASK_IMAGE,
-    BuiltInTaskId.LLM_ASK_AUDIO,
-    BuiltInTaskId.LLM_AGENT_CHAT,
     BuiltInTaskId.FIELD_SCRIBE,
   )
 

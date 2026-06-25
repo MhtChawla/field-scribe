@@ -227,7 +227,7 @@ constructor(
   }
 
   fun getActiveCustomTasks(): List<CustomTask> {
-    return customTasks.toList()
+    return customTasks.filter { it.task.id == BuiltInTaskId.FIELD_SCRIBE }
   }
 
   fun getSelectedModel(): Model? {

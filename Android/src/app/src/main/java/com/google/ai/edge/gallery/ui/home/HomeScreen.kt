@@ -443,9 +443,6 @@ fun HomeScreen(
                     AppTitle(enableAnimation = enableAnimation)
                   }
                   IntroText(enableAnimation = enableAnimation, gm4 = gm4)
-                  if (gm4) {
-                    TryGm4IntroText(enableAnimation = enableAnimation)
-                  }
                 }
 
                 // Tab header for categories.
@@ -625,8 +622,8 @@ private fun AppTitle(enableAnimation: Boolean) {
 
 @Composable
 fun AppTitleGm4(enableAnimation: Boolean) {
-  val text1 = "Google"
-  val text2 = "AI Edge Gallery"
+  val text1 = "Field"
+  val text2 = "Scribe"
   val annotatedText = buildAnnotatedString {
     withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.onSurface)) { append(text1) }
     append(" ")
@@ -667,22 +664,7 @@ private fun IntroText(enableAnimation: Boolean, gm4: Boolean) {
     }
 
   val introText = buildAnnotatedString {
-    val gemma4Url = "https://ai.google.dev/gemma"
-    if (gm4) {
-      append("Discover the power of on-device AI models from the ")
-      append(buildTrackableUrlAnnotatedString(url = litertUrl, linkText = "LiteRT community"))
-      append(", featuring the all-new ")
-      append(buildTrackableUrlAnnotatedString(url = gemma4Url, linkText = "Gemma 4"))
-      append(".")
-    } else {
-      append("${stringResource(R.string.app_intro)} ")
-      append(
-        buildTrackableUrlAnnotatedString(
-          url = litertUrl,
-          linkText = stringResource(R.string.litert_community_label),
-        )
-      )
-    }
+    append(stringResource(R.string.app_intro))
   }
   Text(
     introText,
@@ -854,7 +836,7 @@ private fun TaskList(
     initialAnimationDone = true
   }
 
-  // The highlighted tiles at the top.
+  // Single highlighted FieldScribe tile.
   if (gm4) {
     Column(
       verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -864,91 +846,25 @@ private fun TaskList(
           translationY = (CONTENT_COMPOSABLES_OFFSET_Y.dp * (1 - progress)).toPx()
         },
     ) {
-      val chatToDescription =
-        mapOf(
-          BuiltInTaskId.LLM_CHAT to "Chat with the latest Gemma 4 model today",
-          // use "\u00a0" to make sure the word before and after it should always be together when
-          // wrapping lines.
-          BuiltInTaskId.LLM_AGENT_CHAT to "Have Gemma 4 complete agentic tasks for\u00A0you",
-        )
-      for (task in
-        listOf(
-          modelManagerViewModel.getTaskById(BuiltInTaskId.LLM_CHAT)!!,
-          modelManagerViewModel.getTaskById(BuiltInTaskId.LLM_AGENT_CHAT)!!,
-        )) {
+      val fieldScribeTask = modelManagerViewModel.getTaskById(BuiltInTaskId.FIELD_SCRIBE)
+      if (fieldScribeTask != null) {
         TaskCard(
-          task = task,
+          task = fieldScribeTask,
           index = 0,
           animate = !initialAnimationDone && enableAnimation,
-          onClick = { navigateToTaskScreen(task) },
+          onClick = { navigateToTaskScreen(fieldScribeTask) },
           modifier = Modifier.fillMaxWidth(),
-          description = chatToDescription[task.id]!!,
+          description = "Dictate a field incident and get a structured report",
         )
       }
-
-      Text(
-        text = "Explore other use cases",
-        style =
-          MaterialTheme.typography.headlineSmall.copy(
-            fontWeight = FontWeight.Medium,
-            fontSize = 20.sp,
-            lineHeight = 24.sp,
-          ),
-        color = MaterialTheme.colorScheme.onSurface,
-        modifier = Modifier.padding(top = 22.dp, bottom = 16.dp),
-      )
     }
-  }
-
-  HorizontalPager(
-    state = pagerState,
-    verticalAlignment = Alignment.Top,
-    contentPadding = PaddingValues(horizontal = 20.dp),
-  ) { pageIndex ->
-    val tasks = tasksByCategories[sortedCategories[pageIndex].id]!!
-    if (grid) {
-      Column(
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        modifier =
-          Modifier.fillMaxWidth().padding(4.dp).graphicsLayer {
-            translationY = (CONTENT_COMPOSABLES_OFFSET_Y.dp * (1 - progress)).toPx()
-          },
-      ) {
-        for (i in tasks.indices step 2) {
-          Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-          ) {
-            // First item in the row
-            TaskCard(
-              task = tasks[i],
-              index = i,
-              animate =
-                (pageIndex == 0 || pageIndex == 1) && !initialAnimationDone && enableAnimation,
-              onClick = { navigateToTaskScreen(tasks[i]) },
-              modifier = Modifier.weight(1f),
-              square = true,
-            )
-
-            // Second item in the row, if it exists
-            if (i + 1 < tasks.size) {
-              TaskCard(
-                task = tasks[i + 1],
-                index = i + 1,
-                animate =
-                  (pageIndex == 0 || pageIndex == 1) && !initialAnimationDone && enableAnimation,
-                onClick = { navigateToTaskScreen(tasks[i + 1]) },
-                modifier = Modifier.weight(1f),
-                square = true,
-              )
-            } else {
-              // Add a spacer to fill the remaining space if there's only one item in the last row
-              Spacer(modifier = Modifier.weight(1f))
-            }
-          }
-        }
-      }
-    } else {
+  } else {
+    HorizontalPager(
+      state = pagerState,
+      verticalAlignment = Alignment.Top,
+      contentPadding = PaddingValues(horizontal = 20.dp),
+    ) { pageIndex ->
+      val tasks = tasksByCategories[sortedCategories[pageIndex].id]!!
       Column(
         modifier =
           Modifier.fillMaxWidth().padding(4.dp).graphicsLayer {
