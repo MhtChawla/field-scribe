@@ -1,25 +1,35 @@
 # FieldScribe
 
-**Voice-to-structured-report for field workers, entirely on-device.**
+**Voice-to-structured incident report — powered by a local LLM running fully offline on-device (Qwen 2.5)**
 
-FieldScribe is a feature extension built on top of [Google AI Edge Gallery](https://github.com/google-ai-edge/gallery) that lets field workers in utilities, logistics, and disaster relief dictate an incident verbally and receive a clean, structured report — no internet required.
+<p>
+  <img src="preview/preview_1.png" width="180" alt="Home" />&nbsp;&nbsp;&nbsp;
+  <img src="preview/preview_2.png" width="180" alt="Recording" />&nbsp;&nbsp;&nbsp;
+  <img src="preview/preview_3.png" width="180" alt="Report" />
+</p>
+
+FieldScribe is built on top of [Google AI Edge Gallery](https://github.com/google-ai-edge/gallery). A field worker dictates an incident, and a local LLM (Qwen 2.5 1.5B, quantized to Q4) running entirely on the device transcribes, structures, and validates the report — zero cloud, zero connectivity required.
 
 ## How It Works
 
-1. **Capture** — Worker presses a button and speaks naturally.
-2. **Transcribe** — Audio is converted to raw text on-device via Android’s SpeechRecognizer.
-3. **Structure** — Raw transcription is passed to an on-device SLM (Qwen 1B Q4), which produces a JSON incident report with fixed fields: `incident_type`, `location`, `time`, `impact`, `action_taken`, `injuries`.
-4. **Validate** — A second, separate inference pass reviews the structured report. Incomplete or ambiguous fields are flagged inline so the worker can correct them before finalizing.
+All inference runs locally via [LiteRT-LM](https://github.com/google-ai-edge/LiteRT-LM). No data ever leaves the device.
 
-All four steps run fully offline after the initial model download.
+1. **Capture** — Worker taps the mic and speaks naturally.
+2. **Transcribe** — Android's on-device SpeechRecognizer converts audio to raw text.
+3. **Structure** — The local LLM converts the raw transcript into a structured JSON report with fixed fields: `incident_type`, `location`, `time`, `impact`, `action_taken`, `injuries`.
+4. **Validate** — A second, separate LLM inference pass reviews the structured report. Incomplete or ambiguous fields are flagged inline so the worker can correct them before finalizing.
+
+## Why Fully Offline
+
+Field workers in utilities, logistics, and disaster relief often operate in areas with no connectivity. FieldScribe ensures reports are generated on-site, in real time, without depending on a server. The only network call is the initial one-time model download.
 
 ## Key Design Decisions
 
-- **Two-pass inference with session reset** — `resetConversation()` is called before each `runInference` call. The underlying LiteRT session is stateful; without resetting, structuring and validation calls would inherit stale context and risk memory leaks.
-- **Strictly sequential chaining** — `generateStructuredReport()` completes first, then `validateReport()` runs on its output. Both use the same loaded model instance to keep memory flat.
-- **Short, field-constrained prompts** — Small on-device SLMs get worse with longer prompts, not better. Tightly scoped prompts with an exact field list produce more accurate and consistent results than verbose instructions.
-- **JSON output format** — Plain-text structuring was unreliable; switching to JSON gave stricter, more accurate reports.
-- **Qwen over Gemma** — Switched to Qwen to bypass HuggingFace OAuth requirements, keeping the offline-first constraint clean.
+- **Local LLM, no cloud** — Both structuring and validation run on Qwen 2.5 1.5B (Q4) via the LiteRT inference pipeline that ships with AI Edge Gallery. The model runs on-device hardware (CPU/GPU), keeping latency low and data private.
+- **Two-pass inference with session reset** — `resetConversation()` is called before each `runInference` call. The LiteRT session is stateful; without resetting, the structuring and validation calls would inherit stale context.
+- **Strictly sequential chaining** — `generateStructuredReport()` completes first, then `validateReport()` runs on its output. Both reuse the same loaded model instance to keep memory flat.
+- **Short, field-constrained prompts** — Small on-device LLMs degrade with verbose prompts. Tightly scoped prompts with an exact field list produce more consistent output.
+- **Qwen over Gemma** — Switched to Qwen 2.5 to avoid HuggingFace OAuth requirements, keeping the offline-first flow frictionless.
 
 ## Build & Run
 
